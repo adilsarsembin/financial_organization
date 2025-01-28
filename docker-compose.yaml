@@ -1,0 +1,70 @@
+version: "3.11.6"
+
+x-base: &base
+  image: cyber-dynasty
+  build:
+    context: ./server
+  environment: &base-environment
+    REDIS_HOST: "redis"
+    RABBITMQ_HOST: "rabbitmq"
+    POSTGRES_HOST: "postgres-fo"
+  networks:
+    - local-network
+
+services:
+  web:
+    <<: *base
+    environment:
+      <<: *base-environment
+      CONTAINER_TYPE: DJANGO-SERVER
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - celery
+    volumes:
+      - ./server:/app/server
+      - ./media:/media
+
+  celery:
+    <<: *base
+    environment:
+      <<: *base-environment
+      CONTAINER_TYPE: CELERY
+    depends_on:
+      - redis
+    command: "celery -A config.celery_app worker --concurrency=2 -l info"
+
+  redis:
+    image: redis
+    networks:
+      - local-network
+
+  postgres:
+    hostname: postgres-fo
+    image: postgres:alpine
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: financial-organization
+      POSTGRES_PASSWORD: financial-organization
+      POSTGRES_DB: financial-organization
+    ports:
+      - "5432:5432"
+    networks:
+      - local-network
+
+  rabbitmq:
+    image: rabbitmq:alpine
+    ports:
+      - "5672:5672"
+    networks:
+      - local-network
+
+volumes:
+  postgres-data:
+
+networks:
+  local-network:
+    name: financial_organization_network
+    driver: bridge
