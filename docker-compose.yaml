@@ -1,7 +1,7 @@
 version: "3.11.6"
 
 x-base: &base
-  image: cyber-dynasty
+  image: financial-organization
   build:
     context: ./server
   environment: &base-environment
